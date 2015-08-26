@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -60,12 +61,17 @@ public class FlickrFetchr {
     }
 
     public ArrayList<GalleryItem> fetchItems() {
+        return fetchItems(new Integer(1));
+    }
+
+    public ArrayList<GalleryItem> fetchItems(Integer page) {
         ArrayList<GalleryItem> items = new ArrayList<GalleryItem>();
         try {
             String url = Uri.parse(ENDPOINT).buildUpon()
                     .appendQueryParameter("method", METHOD_GET_RECENT)
                     .appendQueryParameter("api_key", API_KEY)
                     .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
+                    .appendQueryParameter("page", page.toString())
                     .build().toString();
             String xmlString = getUrl(url);
             Log.i(TAG, "Received XML: " + xmlString);

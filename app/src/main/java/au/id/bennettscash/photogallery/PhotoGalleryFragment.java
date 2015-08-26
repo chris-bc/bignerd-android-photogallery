@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 
@@ -20,14 +21,16 @@ public class PhotoGalleryFragment extends Fragment {
     private static final String TAG = "PhotoGalleryFragment";
 
     GridView mGridView;
-    ArrayList<GalleryItem> mItems;
+    ArrayList<GalleryItem> mItems = new ArrayList<GalleryItem>();
+    private int currentPage = 1;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setRetainInstance(true);
-        new FetchItemsTask().execute();
+        setupAdapter();
+        new FetchItemsTask().execute(new Integer(currentPage));
     }
 
     @Override
@@ -45,21 +48,37 @@ public class PhotoGalleryFragment extends Fragment {
         if (mItems != null) {
             mGridView.setAdapter(new ArrayAdapter<GalleryItem>(getActivity(),
                     android.R.layout.simple_gallery_item, mItems));
+            mGridView.setOnScrollListener(new AbsListView.OnScrollListener() {
+                @Override
+                public void onScrollStateChanged(AbsListView view, int scrollState) {
+                    // Nothing here
+                }
+
+                @Override
+                public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                    if (firstVisibleItem + visibleItemCount >= totalItemCount) {
+                        // Load more items
+                        new FetchItemsTask().execute(new Integer(++currentPage));
+                    }
+                }
+            });
         } else {
             mGridView.setAdapter(null);
         }
     }
 
-    private class FetchItemsTask extends AsyncTask<Void, Void, ArrayList<GalleryItem>> {
+    private class FetchItemsTask extends AsyncTask<Integer, Void, ArrayList<GalleryItem>> {
         @Override
-        protected ArrayList<GalleryItem> doInBackground(Void... params) {
-            return new FlickrFetchr().fetchItems();
+        protected ArrayList<GalleryItem> doInBackground(Integer... params) {
+            return new FlickrFetchr().fetchItems(params[0]);
         }
 
         @Override
         protected void onPostExecute(ArrayList<GalleryItem> items) {
-            mItems = items;
-            setupAdapter();
+            mItems.addAll(items);
+            if (mGridView.getAdapter() == null)
+                setupAdapter();
+            ((ArrayAdapter)mGridView.getAdapter()).notifyDataSetChanged();
         }
     }
 }
