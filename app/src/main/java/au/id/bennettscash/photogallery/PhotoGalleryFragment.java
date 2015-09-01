@@ -136,7 +136,7 @@ public class PhotoGalleryFragment extends Fragment {
         private void preloadImages(int position) {
             int minVal, maxVal;
             GalleryItem item;
-            final int NUM_LOAD = 10;
+            final int NUM_LOAD = 100;
 
             if (position<NUM_LOAD)
                 minVal=0;
@@ -150,7 +150,7 @@ public class PhotoGalleryFragment extends Fragment {
             for (int i = minVal; i <= maxVal; ++i) {
                 if (i != position) {
                     item = getItem(i);
-                    mThumbnailThread.queueThumbnail(null, item.getUrl());
+                    mThumbnailThread.preloadThumb(item.getUrl());
                 }
             }
         }

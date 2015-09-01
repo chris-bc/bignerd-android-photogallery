@@ -19,13 +19,14 @@ import java.util.Map;
 public class ThumbnailDownloader<Token> extends HandlerThread {
     private static final String TAG = "ThumbnailDownloader";
     private static final int MESSAGE_DOWNLOAD = 0;
+    private static final int MESSAGE_PRELOAD = 1;
 
     Handler mHandler;
     Handler mResponseHandler;
     Listener<Token> mListener;
     Map<Token, String> requestMap =
             Collections.synchronizedMap(new HashMap<Token, String>());
-    LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(100);
+    LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(1000);
 
     public interface Listener<Token> {
         void onThumbnailDownloaded(Token token, Bitmap thumbnail);
@@ -49,6 +50,8 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
                     Token token = (Token) msg.obj;
                     Log.i(TAG, "Got a request for url: " + requestMap.get(token));
                     handleRequest(token);
+                } else if (msg.what == MESSAGE_PRELOAD) {
+                    handlePreload((String)msg.obj);
                 }
             }
         };
@@ -61,20 +64,43 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
         mHandler.obtainMessage(MESSAGE_DOWNLOAD, token).sendToTarget();
     }
 
+    public void preloadThumb(String url) {
+        Log.i(TAG, "Preload URL: " + url);
+        mHandler.obtainMessage(MESSAGE_PRELOAD, url).sendToTarget();
+    }
+
+    private void handlePreload(final String url) {
+        if (url == null)
+            return;
+
+        // If the URL isn't in the cache add it
+        try {
+            if (cache.get(url) == null) {
+                byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
+                cache.put(url, bitmap);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Error: " + e);
+        }
+    }
+
     private void handleRequest(final Token token) {
         try {
             final String url = requestMap.get(token);
-            if (url == null)
-                return;
+            preloadThumb(url);
 
             final Bitmap bitmap;
+
+            if (url == null)
+                return;
 
             // Is the URL in the cache?
             if (cache.get(url) == null) {
                 byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
                 bitmap = BitmapFactory
                         .decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
-                Log.i(TAG, "Bitmap created");
+                Log.i(TAG, "WARNING PRELOADING IS PROBABLY BROKEN: Bitmap created");
 
                 cache.put(url, bitmap);
             } else {
