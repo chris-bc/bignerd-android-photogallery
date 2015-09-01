@@ -1,7 +1,9 @@
 package au.id.bennettscash.photogallery;
 
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 public class FlickrFetchr {
     public static final String TAG = "FlickrFetchr";
     public static final String PREF_SEARCH_QUERY = "searchQuery";
+    public static final String PREF_SEARCH_NUMRESULTS = "numResults";
 
     private static final String ENDPOINT = "https://api.flickr.com/services/rest/";
     private static final String API_KEY = "f575ce257eb85a435e8d84fab16678b7";
@@ -32,8 +35,15 @@ public class FlickrFetchr {
     private static final String PARAM_TEXT = "text";
 
     private static final String XML_PHOTO = "photo";
+    private static final String XML_PHOTOS = "photos";
 
     private static final String EXTRA_SMALL_URL = "url_s";
+
+    private static String numResults;
+
+    public static String getNumResults() {
+        return numResults;
+    }
 
     byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
@@ -123,6 +133,9 @@ public class FlickrFetchr {
 
                 GalleryItem item = new GalleryItem(id, caption, smallUrl);
                 items.add(item);
+            } else if (eventType == XmlPullParser.START_TAG &&
+                    XML_PHOTOS.equals(parser.getName())) {
+                numResults = parser.getAttributeValue(null, "total");
             }
             eventType = parser.next();
         }
