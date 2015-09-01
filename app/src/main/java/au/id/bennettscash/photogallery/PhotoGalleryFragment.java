@@ -40,7 +40,8 @@ public class PhotoGalleryFragment extends Fragment {
         mThumbnailThread.setListener(new ThumbnailDownloader.Listener<ImageView>() {
             public void onThumbnailDownloaded(ImageView imageView, Bitmap thumbnail) {
                 if (isVisible()) {
-                    imageView.setImageBitmap(thumbnail);
+                    if (imageView != null)
+                        imageView.setImageBitmap(thumbnail);
                 }
             }
         });
@@ -127,8 +128,31 @@ public class PhotoGalleryFragment extends Fragment {
             imageView.setImageResource(R.drawable.brian_up_close);
             GalleryItem item = getItem(position);
             mThumbnailThread.queueThumbnail(imageView, item.getUrl());
+            preloadImages(position);
 
             return convertView;
+        }
+
+        private void preloadImages(int position) {
+            int minVal, maxVal;
+            GalleryItem item;
+            final int NUM_LOAD = 10;
+
+            if (position<NUM_LOAD)
+                minVal=0;
+            else
+                minVal=position - 10;
+            if (position + NUM_LOAD >= getCount())
+                maxVal = getCount()-1;
+            else
+                maxVal = position + NUM_LOAD;
+
+            for (int i = minVal; i <= maxVal; ++i) {
+                if (i != position) {
+                    item = getItem(i);
+                    mThumbnailThread.queueThumbnail(null, item.getUrl());
+                }
+            }
         }
     }
 }
