@@ -112,6 +112,32 @@ public class PhotoGalleryFragment extends Fragment {
         }
     }
 
+    private class PreloadTask extends AsyncTask<Integer, Void, Void> {
+        @Override
+        protected Void doInBackground(Integer... params) {
+            int minVal, maxVal;
+            GalleryItem item;
+            final int NUM_LOAD = 10;
+
+            if (params[0]<NUM_LOAD)
+                minVal=0;
+            else
+                minVal=params[0] - 10;
+            if (params[0] + NUM_LOAD >= mItems.size())
+                maxVal = mItems.size()-1;
+            else
+                maxVal = params[0] + NUM_LOAD;
+
+            for (int i = minVal; i <= maxVal; ++i) {
+                if (i != params[0]) {
+                    item = mItems.get(i);
+                    mThumbnailThread.preloadThumb(item.getUrl());
+                }
+            }
+            return null;
+        }
+    }
+
     private class GalleryItemAdapter extends ArrayAdapter<GalleryItem> {
         public GalleryItemAdapter(ArrayList<GalleryItem> items) {
             super(getActivity(), 0, items);
@@ -128,31 +154,9 @@ public class PhotoGalleryFragment extends Fragment {
             imageView.setImageResource(R.drawable.brian_up_close);
             GalleryItem item = getItem(position);
             mThumbnailThread.queueThumbnail(imageView, item.getUrl());
-            preloadImages(position);
+            new PreloadTask().execute(position);
 
             return convertView;
-        }
-
-        private void preloadImages(int position) {
-            int minVal, maxVal;
-            GalleryItem item;
-            final int NUM_LOAD = 100;
-
-            if (position<NUM_LOAD)
-                minVal=0;
-            else
-                minVal=position - 10;
-            if (position + NUM_LOAD >= getCount())
-                maxVal = getCount()-1;
-            else
-                maxVal = position + NUM_LOAD;
-
-            for (int i = minVal; i <= maxVal; ++i) {
-                if (i != position) {
-                    item = getItem(i);
-                    mThumbnailThread.preloadThumb(item.getUrl());
-                }
-            }
         }
     }
 }
