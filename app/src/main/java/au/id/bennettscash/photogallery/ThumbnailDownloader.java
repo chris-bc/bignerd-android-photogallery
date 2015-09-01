@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
+import android.util.LruCache;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -24,9 +25,10 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
     Listener<Token> mListener;
     Map<Token, String> requestMap =
             Collections.synchronizedMap(new HashMap<Token, String>());
+    LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(100);
 
     public interface Listener<Token> {
-        void onThumbnailDownloaded(Token token, Bitmap thumbnil);
+        void onThumbnailDownloaded(Token token, Bitmap thumbnail);
     }
 
     public void setListener(Listener<Token> listener) {
@@ -65,10 +67,20 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
             if (url == null)
                 return;
 
-            byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
-            final Bitmap bitmap = BitmapFactory
-                    .decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
-            Log.i(TAG, "Bitmap created");
+            final Bitmap bitmap;
+
+            // Is the URL in the cache?
+            if (cache.get(url) == null) {
+                byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
+                bitmap = BitmapFactory
+                        .decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
+                Log.i(TAG, "Bitmap created");
+
+                cache.put(url, bitmap);
+            } else {
+                bitmap = cache.get(url);
+                Log.i(TAG, "Using cached bitmap");
+            }
 
             mResponseHandler.post(new Runnable() {
                 @Override
