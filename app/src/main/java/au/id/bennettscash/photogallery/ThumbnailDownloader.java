@@ -48,7 +48,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
             public void handleMessage(Message msg) {
                 if (msg.what == MESSAGE_DOWNLOAD) {
                     Token token = (Token) msg.obj;
-                    Log.i(TAG, "Got a request for url: " + requestMap.get(token));
+//                    Log.i(TAG, "Got a request for url: " + requestMap.get(token));
                     handleRequest(token);
                 } else if (msg.what == MESSAGE_PRELOAD) {
                     handlePreload((String)msg.obj);
@@ -65,7 +65,6 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
     }
 
     public void preloadThumb(String url) {
-        Log.i(TAG, "Preload URL: " + url);
         mHandler.obtainMessage(MESSAGE_PRELOAD, url).sendToTarget();
     }
 
@@ -105,7 +104,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread {
                 cache.put(url, bitmap);
             } else {
                 bitmap = cache.get(url);
-                Log.i(TAG, "Using cached bitmap");
+//                Log.i(TAG, "Using cached bitmap");
             }
 
             mResponseHandler.post(new Runnable() {

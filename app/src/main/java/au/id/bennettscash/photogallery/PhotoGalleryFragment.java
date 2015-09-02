@@ -33,7 +33,7 @@ import java.util.ArrayList;
 /**
  * Created by chris on 24/08/15.
  */
-public class PhotoGalleryFragment extends Fragment {
+public class PhotoGalleryFragment extends VisibleFragment {
     private static final String TAG = "PhotoGalleryFragment";
 
     GridView mGridView;
